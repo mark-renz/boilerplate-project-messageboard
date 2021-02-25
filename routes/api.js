@@ -15,18 +15,19 @@ async function createThread(boardName, text, deletePassword){
 
   const thread = await newThread.save().catch(e=>console.log(e));
 
-  if(!board){
-    if(thread){
-      const newBoard = new Board({
-        board_name: boardName,
-        threads: thread._id
-      });
-  
-      board = await newBoard.save().catch(e=>console.log(e));
-    } 
-  }
-  console.log(thread);
-  console.log(board);
+  if(!board && thread){
+    const newBoard = new Board({
+      board_name: boardName,
+      threads: thread._id
+    });
+
+    board = await newBoard.save().catch(e=>console.log(e));   
+  } else if(board && thread){
+    const updateBoard = await Board.updateOne({ board_name: boardName },{
+      $push: {threads: [thread._id]}
+    }).catch(e=>console.log(e));
+  } else console.log('thread creation fail')
+
   return thread;
 }
 
@@ -36,7 +37,7 @@ module.exports = function (app) {
     /*TODO: New thread (POST /api/threads/:board)
     input board, body, password
    */
-    .post(( req, res ) => {
+    .post(async ( req, res ) => {
       console.log("POST Thread");
       
       const boardName = req.params.board;
@@ -44,9 +45,9 @@ module.exports = function (app) {
       const deletePassword = req.body.delete_password;
 
       console.log(boardName, text, deletePassword);
-      createThread(boardName, text, deletePassword);
-
-
+      const data = await createThread(boardName, text, deletePassword);
+      
+      res.json(data);
     })
 
   /*TODO: Report thread (PUT /api/threads/:board) 
