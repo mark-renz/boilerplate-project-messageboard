@@ -50,6 +50,29 @@ module.exports = function (app) {
       res.json(data);
     })
 
+    .get(async ( req, res )=>{
+      console.log("GET Thread");
+
+      const boardName = req.params.board;
+      
+      const board = Board.findOne({board_name:boardName});
+      const threads = await board.populate({
+        path: 'threads',
+        options: {limit: 1, sort: {bumped_on: -1}}
+      }).exec();
+
+      console.log(threads);
+      res.json(threads);
+      // const board = await Board.findOne({board_name: boardName});
+      // console.log(board.populate('threads'));
+      // board.populate('threads').exec((err, board)=>{
+      //   if(err) console.log(err)
+      //   console.log(board.threads);
+      // });
+      // console.log(threads);
+
+    })
+
   /*TODO: Report thread (PUT /api/threads/:board) 
     input board, thread_id
   */
@@ -58,13 +81,10 @@ module.exports = function (app) {
     input board, thread_id, password
   */
   
-  /*TODO: Get thread (GET /api/replies/:board)
+  /*TODO: Get thread (GET /api/thread/:board)
     return thread[10] - bumped, replies[3] - recent
   */
 
-  /*TODO: Get thread (GET /api/replies/:board?thread_id=:thread_id)
-    return thread, all replies.
-  */
   app.route('/api/replies/:board');
   /*TODO: New reply (POST /api/replies/:board) 
     input board, thread_id, body, password
@@ -76,6 +96,10 @@ module.exports = function (app) {
 
   /*TODO: Delete reply (DELETE /api/replies/:board)
     input board, threadId, replyId, password
+  */
+
+  /*TODO: Get thread (GET /api/replies/:board?thread_id=:thread_id)
+    return thread, all replies.
   */
 
 };
