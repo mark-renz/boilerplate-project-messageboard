@@ -17,6 +17,15 @@ app.use(cors({origin: '*'})); //For FCC testing purposes only
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+//TODO: connect to DB
+
+/*TODO: add security
+  
+  *Only allow your site to be loaded in an iFrame on your own pages.
+  *Do not allow DNS prefetching
+  *Only allow your site to send the referrer for your own pages
+*/
+
 //Sample front-end
 app.route('/b/:board/')
   .get(function (req, res) {
