@@ -3,7 +3,6 @@
 /*TODO: create Model
   
   Board
-  _id: ID
   board_name:String
   created_on: date & time
   threads: [{
