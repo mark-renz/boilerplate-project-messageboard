@@ -5,7 +5,7 @@ const threadSchema = Schema({
   delete_password: String,
   created_on:{ type: Date, default: Date.now },
   bumped_on:{ type: Date, default: Date.now },
-  reported: Boolean,
+  reported: { type: Boolean, default: false },
   replies: [{
     type: Schema.Types.ObjectId, ref:'Reply'
   }]

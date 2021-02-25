@@ -1,39 +1,53 @@
 'use strict';
 
-/*TODO: create Model
+const Board = require('../models/board');
+const Thread = require('../models/thread');
+const Reply = require('../models/reply');
+
+async function createThread(boardName, text, deletePassword){
+  //TODO: find board if not exist create board else create thread
+  let board = await Board.findOne({board_name: boardName}).catch(e=>console.log(e));
   
-  Board
-  board_name:String
-  created_on: date & time
-  threads: [{
-    type: Schema.Types.ObjectId, ref: 'Thread'
-  }]
+  const newThread = new Thread({
+    text: text,
+    delete_password: deletePassword,
+  });
 
-  Thread
-  _id: ID
-  text: String
-  delete_password: String
-  created_on: date & time
-  bumped_on: date & time
-  reported: BOOL
-  replies: [{
-    type: Schema.Types.ObjectId, ref: 'Reply'
-  }]
+  const thread = await newThread.save().catch(e=>console.log(e));
 
-  Reply
-  _id: ID
-  text: String
-  delete_password: String
-  created_on: date & time
-  reported: BOOL
-*/
+  if(!board){
+    if(thread){
+      const newBoard = new Board({
+        board_name: boardName,
+        threads: thread._id
+      });
+  
+      board = await newBoard.save().catch(e=>console.log(e));
+    } 
+  }
+  console.log(thread);
+  console.log(board);
+  return thread;
+}
 
 module.exports = function (app) {
   
-  app.route('/api/threads/:board');
-  /*TODO: New thread (POST /api/threads/:board)
+  app.route('/api/threads/:board')
+    /*TODO: New thread (POST /api/threads/:board)
     input board, body, password
    */
+    .post(( req, res ) => {
+      console.log("POST Thread");
+      
+      const boardName = req.params.board;
+      const text = req.body.text;
+      const deletePassword = req.body.delete_password;
+
+      console.log(boardName, text, deletePassword);
+      createThread(boardName, text, deletePassword);
+
+
+    })
 
   /*TODO: Report thread (PUT /api/threads/:board) 
     input board, thread_id
