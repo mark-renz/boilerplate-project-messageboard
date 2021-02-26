@@ -87,8 +87,10 @@ module.exports = function (app) {
   /*TODO: Report thread (PUT /api/threads/:board) 
     input board, thread_id
   */
-    .put(async(req, res) => {
-
+    .put(async ( req, res ) => {
+      const threadId = req.body.thread_id;
+      const thread = await Thread.findByIdAndUpdate(threadId, {reported: true}).catch(e=>console.log(e));
+      return thread ? res.send('reported') : res.send('thread does not exist');
     })
 
   /*TODO: Delete thread (DELETE /api/threads/:board)
