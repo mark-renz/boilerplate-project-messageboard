@@ -36,7 +36,7 @@ console.log('DB Connected');
 */
 
 //Sample front-end
-app.route('/b/:board/')
+app.route('/b/:board')
   .get(function (req, res) {
     res.sendFile(process.cwd() + '/views/board.html');
   });

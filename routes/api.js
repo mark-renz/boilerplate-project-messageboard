@@ -41,13 +41,14 @@ module.exports = function (app) {
       console.log("POST Thread");
       
       const boardName = req.params.board;
+      console.log(boardName);
       const text = req.body.text;
       const deletePassword = req.body.delete_password;
 
       console.log(boardName, text, deletePassword);
       const thread = await createThread(boardName, text, deletePassword);
       
-      res.json(thread);
+      res.send(thread);
     })
     
     /*TODO: Get thread (GET /api/thread/:board)
@@ -55,6 +56,7 @@ module.exports = function (app) {
     */
     .get(async ( req, res )=>{
       console.log("GET Thread");
+      console.log(req.params);
 
       const boardName = req.params.board;
       
@@ -64,7 +66,21 @@ module.exports = function (app) {
         options: {limit: 2, sort: {bumped_on: -1}}
       }).exec();
 
-      res.json(threads);
+      let threadReturn = await threads.threads.map(thread => {
+      const newThread = {
+        _id: thread._id,
+        text: thread.text,
+        created_on: thread.created_on,
+        bumped_on: thread.bumped_on,
+        reported: thread.reported,
+        delete_password: thread.delete_password,
+        replies: thread.replies,
+        replycount: thread.replies.length
+      }
+      return newThread;
+      });
+
+      res.send(threadReturn);
     })
 
   /*TODO: Report thread (PUT /api/threads/:board) 
