@@ -57,8 +57,6 @@ module.exports = function (app) {
    //TODO: return 3 most recent reply
     .get(async ( req, res )=>{
       console.log("GET Thread");
-      console.log(req.params);
-
       const boardName = req.params.board;
       
       const board = Board.findOne({board_name:boardName});
@@ -96,6 +94,22 @@ module.exports = function (app) {
   /*TODO: Delete thread (DELETE /api/threads/:board)
     input board, thread_id, password
   */
+    .delete(async ( req, res) =>{
+      const boardName = req.body.board;
+      const threadId = req.body.thread_id;
+      const deletePassword = req.body.delete_password;
+      
+      const board = await Board.findOne({board_name:boardName});
+        
+      if(board && board.threads.includes(threadId)){
+          const thread = await Thread.deleteOne({
+            _id:threadId,
+          delete_password: deletePassword}).catch(e=>console.log(e));
+          
+          thread.deletedCount ? res.send('delete successful') : res.send('incorrect password');
+        }else 
+          res.send('incorrect board');
+    });
 
   app.route('/api/replies/:board');
   /*TODO: New reply (POST /api/replies/:board) 
