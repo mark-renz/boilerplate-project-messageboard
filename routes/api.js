@@ -48,12 +48,13 @@ module.exports = function (app) {
       console.log(boardName, text, deletePassword);
       const thread = await createThread(boardName, text, deletePassword);
       
-      res.send(thread);
+      thread ? res.redirect(`/b/${boardName}`) : res.send('create thread fail');
     })
     
     /*TODO: Get thread (GET /api/thread/:board)
     return thread[10] - bumped, replies[3] - recent
     */
+   //TODO: return 3 most recent reply
     .get(async ( req, res )=>{
       console.log("GET Thread");
       console.log(req.params);
@@ -63,7 +64,7 @@ module.exports = function (app) {
       const board = Board.findOne({board_name:boardName});
       const threads = await board.populate({
         path: 'threads',
-        options: {limit: 2, sort: {bumped_on: -1}}
+        options: {limit: 10, sort: {bumped_on: -1}}
       }).exec();
 
       let threadReturn = await threads.threads.map(thread => {
@@ -86,6 +87,9 @@ module.exports = function (app) {
   /*TODO: Report thread (PUT /api/threads/:board) 
     input board, thread_id
   */
+    .put(async(req, res) => {
+
+    })
 
   /*TODO: Delete thread (DELETE /api/threads/:board)
     input board, thread_id, password
