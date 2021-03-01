@@ -58,6 +58,8 @@ module.exports = function (app) {
     .get(async ( req, res )=>{
       console.log("GET Thread");
       const boardName = req.params.board;
+
+      console.log(boardName);
       
       const board = Board.findOne({board_name:boardName});
       const threads = await board.populate({
@@ -136,7 +138,9 @@ module.exports = function (app) {
 
           if(reply){
             const updateThread = await Thread.updateOne({ _id: thread_id },{
-              $push: {replies: [reply._id]}
+              $push: {
+                replies: [reply._id]
+              }
             }).catch(e=>console.log(e));
           }
         }
@@ -158,5 +162,29 @@ module.exports = function (app) {
   /*TODO: Get thread (GET /api/replies/:board?thread_id=:thread_id)
     return thread, all replies.
   */
+  .get( async (
+    {params:{board:boardName}, 
+    query:{thread_id: threadId}}, res) => {
+      console.log('GET REPLIES');
+      const board = await Board.findOne({board_name: boardName});
+      
+      if(board && board.threads.includes(threadId)){
+        const thread = Thread.findById(threadId);
+
+        const replies = await thread.populate({
+          path: 'replies',
+          options: {sort: {created_on: -1}}
+        }).exec();
+        
+        //const replyReturn = await 
+
+        res.send(replies);
+
+      }
+      else res.send("");
+  })
+
+
+
 
 };
