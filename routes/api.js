@@ -65,20 +65,22 @@ module.exports = function (app) {
         options: {limit: 10, sort: {bumped_on: -1}}
       }).exec();
 
-      let threadReturn = await threads.threads.map(thread => {
-      const newThread = {
-        _id: thread._id,
-        text: thread.text,
-        created_on: thread.created_on,
-        bumped_on: thread.bumped_on,
-        reported: thread.reported,
-        delete_password: thread.delete_password,
-        replies: thread.replies,
-        replycount: thread.replies.length
-      }
-      return newThread;
-      });
+      let threadReturn = await threads.threads.map(
+        ({_id, text, created_on, bumped_on, reported, delete_password, replies}) => {
+          const newThread = {
+            _id: _id,
+            text: text,
+            created_on: created_on,
+            bumped_on: bumped_on,
+            reported: reported,
+            delete_password: delete_password,
+            replies: replies,
+            replycount: replies.length
 
+          }
+          return newThread;
+        });
+      
       res.send(threadReturn);
     })
 
