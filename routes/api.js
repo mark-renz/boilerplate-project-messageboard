@@ -113,10 +113,39 @@ module.exports = function (app) {
           res.send('incorrect board');
     });
 
-  app.route('/api/replies/:board');
+  app.route('/api/replies/:board')
   /*TODO: New reply (POST /api/replies/:board) 
     input board, thread_id, body, password
   */
+  .post( async (
+    {params:{board: boardName}, 
+    body:{thread_id, text, delete_password}}, res)=> {
+      console.log("POST REPLY");
+      const board = await Board.findOne({board_name:boardName}).catch(e=>console.log(e));
+      
+      if(board && board.threads.includes(thread_id)){
+        const thread = await Thread.findOne({_id:thread_id}).catch(e=>console.log(e));
+
+        if(thread) {
+          const newReply = new Reply({
+            text: text,
+            delete_password: delete_password
+          });
+
+          const reply = await newReply.save().catch(e=>console.log(e));
+
+          if(reply){
+            const updateThread = await Thread.updateOne({ _id: thread_id },{
+              $push: {replies: [reply._id]}
+            }).catch(e=>console.log(e));
+          }
+        }
+      }
+      
+      //created or not redirect thread
+      res.redirect(`/b/${boardName}/${thread_id}`);
+
+  })
 
   /*TODO: Report reply (PUT /api/replies/:board)
     input board, threadId, replyId 
