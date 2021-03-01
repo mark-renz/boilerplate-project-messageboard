@@ -140,6 +140,9 @@ module.exports = function (app) {
             const updateThread = await Thread.updateOne({ _id: thread_id },{
               $push: {
                 replies: [reply._id]
+              },
+              $set: {
+                bumped_on: Date.now()
               }
             }).catch(e=>console.log(e));
           }
@@ -175,8 +178,6 @@ module.exports = function (app) {
           path: 'replies',
           options: {sort: {created_on: -1}}
         }).exec();
-        
-        //const replyReturn = await 
 
         res.send(replies);
 
