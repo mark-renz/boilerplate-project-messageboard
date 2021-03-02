@@ -64,19 +64,32 @@ module.exports = function (app) {
       const board = Board.findOne({board_name:boardName});
       const threads = await board.populate({
         path: 'threads',
-        options: {limit: 10, sort: {bumped_on: -1}}
+        populate: {
+          path: 'replies',
+          options : {sort:{created_on: -1}}
+        },
+        options: {limit: 10, sort: {bumped_on: -1}},
       }).exec();
 
       let threadReturn = await threads.threads.map(
-        ({_id, text, created_on, bumped_on, reported, delete_password, replies}) => {
+        ({_id, text, created_on, bumped_on, replies}) => {
+          
+          let replyReturn = replies.slice(3).map(
+            ({_id, text, created_on})=>{
+              const newReply = {
+                _id: _id,
+                text: text,
+                created_on: created_on
+              }
+              return newReply;
+            });
+          
           const newThread = {
             _id: _id,
             text: text,
             created_on: created_on,
             bumped_on: bumped_on,
-            reported: reported,
-            delete_password: delete_password,
-            replies: replies,
+            replies: replyReturn,
             replycount: replies.length
 
           }
