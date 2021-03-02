@@ -5,31 +5,38 @@ const Thread = require('../models/thread');
 const Reply = require('../models/reply');
 const thread = require('../models/thread');
 
-async function createThread(boardName, text, deletePassword){
-  //TODO: find board if not exist create board else create thread
-  let board = await Board.findOne({board_name: boardName}).catch(e=>console.log(e));
-  
+async function createThread(text, deletePassword){
   const newThread = new Thread({
     text: text,
-    delete_password: deletePassword,
+    delete_password: deletePassword
   });
 
   const thread = await newThread.save().catch(e=>console.log(e));
 
-  if(!board && thread){
-    const newBoard = new Board({
-      board_name: boardName,
-      threads: thread._id
-    });
-
-    board = await newBoard.save().catch(e=>console.log(e));   
-  } else if(board && thread){
-    const updateBoard = await Board.updateOne({ board_name: boardName },{
-      $push: {threads: [thread._id]}
-    }).catch(e=>console.log(e));
-  } else console.log('thread creation fail')
-
   return thread;
+
+}
+
+async function createBoard(boardName, threadId){
+  const newBoard = new Board({
+    board_name: boardName,
+    threads: threadId
+  });
+
+  const board = await newBoard.save().catch(e=>console.log(e));
+
+  return board;
+}
+
+async function createReply(text, deletePassword){
+  const newReply = new Reply({
+    text: text,
+    delete_password: deletePassword
+  });
+
+  const reply = await newReply.save().catch(e=>console.log(e));
+
+  return reply;
 }
 
 module.exports = function (app) {
@@ -38,18 +45,28 @@ module.exports = function (app) {
     /*TODO: New thread (POST /api/threads/:board)
     input board, body, password
    */
-    .post(async ( req, res ) => {
+    .post(async ( 
+      {params:{board: boardName}, body:{text, delete_password}}, res ) => {
       console.log("POST Thread");
-      
-      const boardName = req.params.board;
-      console.log(boardName);
-      const text = req.body.text;
-      const deletePassword = req.body.delete_password;
 
-      console.log(boardName, text, deletePassword);
-      const thread = await createThread(boardName, text, deletePassword);
+      console.log(boardName, text, delete_password);
+
+      let board = await Board.findOne({board_name: boardName}).catch(e=>console.log(e));
+      const thread = await createThread(text, delete_password);
+
+      if(!board && thread){
+        let board = await createBoard(boardName, thread._id);
+        
+        board ? res.redirect(`/b/${boardName}`) : console.log('thread creation fail');
+      } 
+      else if(board && thread){
+        const updateBoard = await Board.updateOne({ board_name: boardName },{
+          $push: {threads: [thread._id]}
+          }).catch(e=>console.log(e));
+
+          updateBoard ? res.redirect(`/b/${boardName}`) : console.log('thread creation fail');
       
-      thread ? res.redirect(`/b/${boardName}`) : res.send('create thread fail');
+        } else console.log('thread creation fail');
     })
     
     /*TODO: Get thread (GET /api/thread/:board)
@@ -100,8 +117,7 @@ module.exports = function (app) {
   /*TODO: Report thread (PUT /api/threads/:board) 
     input board, thread_id
   */
-    .put(async ( req, res ) => {
-      const threadId = req.body.thread_id;
+    .put(async ( {body:{report_id: threadId}}, res ) => {
       const thread = await Thread.findByIdAndUpdate(threadId, {reported: true}).catch(e=>console.log(e));
       return thread ? res.send('reported') : res.send('thread does not exist');
     })
@@ -118,7 +134,7 @@ module.exports = function (app) {
         if(board && board.threads.includes(threadId)){
             const thread = await Thread.deleteOne({
               _id:threadId,
-            delete_password: deletePassword}).catch(e=>console.log(e));
+              delete_password: deletePassword}).catch(e=>console.log(e));
             
             thread.deletedCount ? res.send('delete successful') : res.send('incorrect password');
           }else 
@@ -139,12 +155,7 @@ module.exports = function (app) {
         const thread = await Thread.findOne({_id:thread_id}).catch(e=>console.log(e));
 
         if(thread) {
-          const newReply = new Reply({
-            text: text,
-            delete_password: delete_password
-          });
-
-          const reply = await newReply.save().catch(e=>console.log(e));
+          const reply = await createReply(text, delete_password);
 
           if(reply){
             await Thread.updateOne({ _id: thread_id },
