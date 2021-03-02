@@ -109,21 +109,20 @@ module.exports = function (app) {
   /*TODO: Delete thread (DELETE /api/threads/:board)
     input board, thread_id, password
   */
-    .delete(async ( req, res) =>{
-      const boardName = req.body.board;
-      const threadId = req.body.thread_id;
-      const deletePassword = req.body.delete_password;
-      
-      const board = await Board.findOne({board_name:boardName});
+    .delete(
+      async ({ body:{thread_id:threadId, delete_password:deletePassword },
+      params:{board: boardName}}, res) =>{
         
-      if(board && board.threads.includes(threadId)){
-          const thread = await Thread.deleteOne({
-            _id:threadId,
-          delete_password: deletePassword}).catch(e=>console.log(e));
+        const board = await Board.findOne({board_name:boardName});
           
-          thread.deletedCount ? res.send('delete successful') : res.send('incorrect password');
-        }else 
-          res.send('incorrect board');
+        if(board && board.threads.includes(threadId)){
+            const thread = await Thread.deleteOne({
+              _id:threadId,
+            delete_password: deletePassword}).catch(e=>console.log(e));
+            
+            thread.deletedCount ? res.send('delete successful') : res.send('incorrect password');
+          }else 
+            res.send('incorrect board');
     });
 
   app.route('/api/replies/:board')
@@ -148,18 +147,18 @@ module.exports = function (app) {
           const reply = await newReply.save().catch(e=>console.log(e));
 
           if(reply){
-            const updateThread = await Thread.updateOne({ _id: thread_id },{
-              $push: {
-                replies: [reply._id]
-              },
-              $set: {
-                bumped_on: Date.now()
+            await Thread.updateOne({ _id: thread_id },
+              {
+                $push: {
+                  replies: [reply._id]
+                },
+                $set: {
+                  bumped_on: Date.now()
               }
             }).catch(e=>console.log(e));
           }
         }
       }
-      
       //created or not redirect thread
       res.redirect(`/b/${boardName}/${thread_id}`);
 
@@ -168,6 +167,10 @@ module.exports = function (app) {
   /*TODO: Report reply (PUT /api/replies/:board)
     input board, threadId, replyId 
   */
+  .put(async ( {body:{reply_id}}, res ) => {
+  const reply = await Reply.findByIdAndUpdate(reply_id, {reported: true}).catch(e=>console.log(e));
+  return reply ? res.send('reported') : res.send('reply does not exist');
+  })
 
   /*TODO: Delete reply (DELETE /api/replies/:board)
     input board, threadId, replyId, password
@@ -198,7 +201,7 @@ module.exports = function (app) {
     async({params:{ board:boardName }, 
     query:{thread_id: threadId}}, res) => {
       console.log('GET REPLIES');
-      
+
       const board = await Board.findOne({board_name: boardName});
       
       if(board && board.threads.includes(threadId)){
