@@ -3,6 +3,7 @@
 const Board = require('../models/board');
 const Thread = require('../models/thread');
 const Reply = require('../models/reply');
+const thread = require('../models/thread');
 
 async function createThread(boardName, text, deletePassword){
   //TODO: find board if not exist create board else create thread
@@ -55,14 +56,11 @@ module.exports = function (app) {
     return thread[10] - bumped, replies[3] - recent
     */
    //TODO: return 3 most recent reply
-    .get(async ( req, res )=>{
+    .get(async ( {params:{board:boardName}}, res )=>{
       console.log("GET Thread");
-      const boardName = req.params.board;
 
-      console.log(boardName);
-      
-      const board = Board.findOne({board_name:boardName});
-      const threads = await board.populate({
+      const board = await Board.findOne({board_name:boardName})
+      .populate({
         path: 'threads',
         populate: {
           path: 'replies',
@@ -71,32 +69,32 @@ module.exports = function (app) {
         options: {limit: 10, sort: {bumped_on: -1}},
       }).exec();
 
-      let threadReturn = await threads.threads.map(
+      const data = await board.threads.map(
         ({_id, text, created_on, bumped_on, replies}) => {
           
-          let replyReturn = replies.slice(3).map(
+          const replyObj = replies.slice(0,3).map(
             ({_id, text, created_on})=>{
-              const newReply = {
+              const replyObj = {
                 _id: _id,
                 text: text,
                 created_on: created_on
               }
-              return newReply;
+              return replyObj;
             });
           
-          const newThread = {
+          const threadObj = {
             _id: _id,
             text: text,
             created_on: created_on,
             bumped_on: bumped_on,
-            replies: replyReturn,
+            replies: replyObj,
             replycount: replies.length
-
           }
-          return newThread;
+
+          return threadObj;
         });
       
-      res.send(threadReturn);
+      res.send(data);
     })
 
   /*TODO: Report thread (PUT /api/threads/:board) 
@@ -174,14 +172,33 @@ module.exports = function (app) {
   /*TODO: Delete reply (DELETE /api/replies/:board)
     input board, threadId, replyId, password
   */
+  .delete(async (
+    {params:{board: boardName}, body:{thread_id:threadId, reply_id: replyId, delete_password:deletePassword}}, res) => {
+      console.log('DELETE REPLY');
+
+      const board = await Board.findOne({board_name: boardName}).catch(e=>console.log(e));
+
+      if(board && board.threads.includes(threadId)){
+        const thread = await Thread.findById(threadId).catch(e=>console.log(e));
+        
+        if(thread && thread.replies.includes(replyId)){
+          const reply = await Reply.findOneAndDelete({_id:replyId, delete_password: deletePassword}).catch(e=>console.log(e));
+
+          reply ? res.send('reply deleted') : res.send('wrong password');
+        }
+      } res.send('not exist')
+    })
+      
+      
 
   /*TODO: Get thread (GET /api/replies/:board?thread_id=:thread_id)
     return thread, all replies.
   */
-  .get( async (
-    {params:{board:boardName}, 
+  .get( 
+    async({params:{ board:boardName }, 
     query:{thread_id: threadId}}, res) => {
       console.log('GET REPLIES');
+      
       const board = await Board.findOne({board_name: boardName});
       
       if(board && board.threads.includes(threadId)){
@@ -197,8 +214,6 @@ module.exports = function (app) {
       }
       else res.send("");
   })
-
-
-
-
 };
+
+
