@@ -4,6 +4,7 @@ const express     = require('express');
 const bodyParser  = require('body-parser');
 const cors        = require('cors');
 const mongoose = require('mongoose');
+const helmet = require('helmet');
 
 const apiRoutes         = require('./routes/api.js');
 const fccTestingRoutes  = require('./routes/fcctesting.js');
@@ -35,6 +36,23 @@ console.log('DB Connected');
   *Do not allow DNS prefetching
   *Only allow your site to send the referrer for your own pages
 */
+app.use(helmet.frameguard({
+  action:"sameorigin",
+  })
+);
+
+app.use(
+  helmet.dnsPrefetchControl({
+    allow: false,
+  })
+);
+
+app.use(
+  helmet.referrerPolicy({
+    policy: ["origin"],
+  })
+);
+
 
 //Sample front-end
 app.route('/b/:board')
