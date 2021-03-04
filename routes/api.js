@@ -189,7 +189,7 @@ module.exports = function (app) {
   .delete(async (
     {params:{board: boardName}, body:{thread_id:threadId, reply_id: replyId, delete_password:deletePassword}}, res) => {
       console.log('DELETE REPLY');
-
+      console.log(boardName, threadId, replyId, deletePassword)
       const board = await Board.findOne({board_name: boardName}).catch(e=>console.log(e));
 
       if(board && board.threads.includes(threadId)){
@@ -214,7 +214,7 @@ module.exports = function (app) {
       console.log('GET REPLIES');
 
       const board = await Board.findOne({board_name: boardName});
-      
+
       if(board && board.threads.includes(threadId)){
         const thread = Thread.findById(threadId);
 
@@ -223,10 +223,26 @@ module.exports = function (app) {
           options: {sort: {created_on: -1}}
         }).exec();
 
-        res.send(replies);
+        const reply = await replies.replies.map(({_id, text, created_on}) => {
+          const newReply = {
+            _id: _id,
+            text: text,
+            created_on: created_on
+          }
+          return newReply;
+        });
+
+        const data = {
+          _id: replies._id,
+          text: replies.text,
+          created_on: replies.created_on,
+          bumped_on: replies.bumped_on,
+          replies: reply
+        }
+        res.send(data);
 
       }
-      else res.send("");
+      else res.send("not found!");
   })
 };
 
